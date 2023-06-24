@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
@@ -19,6 +20,13 @@ type apiConfig struct {
 }
 
 func main() {
+	// feed, err := urlToFeed("https://pranjal-05.medium.com/feed")
+	// feed, err := urlToFeed("https://blog.boot.dev/index.xml")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Println(feed)
+
 	fmt.Println("Hello Rss feed reader ")
 
 	godotenv.Load(".env")
@@ -37,9 +45,12 @@ func main() {
 		log.Fatal("can't connect to DB ", err)
 	}
 
+	db := database.New(conn)
 	apiCFG := apiConfig{
-		DB: database.New(conn),
+		DB: db,
 	}
+
+	go startScraping(db,10,time.Minute)
 
 	router := chi.NewRouter()
 	router.Use(cors.Handler(cors.Options{
@@ -65,6 +76,10 @@ func main() {
 	v1Router.Delete("/feed_follows/{feedFollowID}", apiCFG.middlewareAuth(apiCFG.handlerFeedFollowDelete))
 
 	v1Router.Get("/feeds", apiCFG.handlerGetFeeds)
+
+	v1Router.Get("/posts", apiCFG.middlewareAuth(apiCFG.handlerGetPostsForUser))
+
+
 
 	router.Mount("/v1", v1Router)
 

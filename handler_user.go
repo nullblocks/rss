@@ -38,18 +38,21 @@ func (apiCFG *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Reques
 
 }
 
-func (cfg *apiConfig) handlerUsersGet(w http.ResponseWriter, r *http.Request, user database.User) {
-	// apiKey, err := auth.GetAPIKey(r.Header)
-	// if err != nil {
-	// 	respondWithError(w, http.StatusUnauthorized, "Couldn't find api key")
-	// 	return
-	// }
-
-	// user, err := cfg.DB.GetUserByAPIKey(r.Context(), apiKey)
-	// if err != nil {
-	// 	respondWithError(w, http.StatusNotFound, "Couldn't ge t user")
-	// 	return
-	// }
+func (apiCFG *apiConfig) handlerUsersGet(w http.ResponseWriter, r *http.Request, user database.User) {
 
 	respondWithJSON(w, http.StatusOK, databaseUserToUser(user))
+}
+func (apiCFG *apiConfig) handlerGetPostsForUser(w http.ResponseWriter, r *http.Request, user database.User) {
+
+	posts, err := apiCFG.DB.GetPostForUser(r.Context(), database.GetPostForUserParams{
+		UserID: user.ID,
+		Limit:  int32(10),
+	})
+	println("POSTS :=  ", posts)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("COuldn't get Posts : %v", err))
+		return
+	}
+	fmt.Println("POST at handler are", posts)
+	respondWithJSON(w, 200, databasePostsToPosts(posts))
 }
